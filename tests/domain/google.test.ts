@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { createContext, runInContext } from "node:vm";
 import { it, expect } from "vitest";
-import { seed } from "../../src/data/seed";
+import { fixtureSeed as seed } from "../fixtures/seed";
 function backend() {
   let tables = seed();
   const lock = {

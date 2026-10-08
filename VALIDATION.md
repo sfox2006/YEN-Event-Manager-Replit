@@ -17,3 +17,11 @@ Browser tests cover all seven main routes, navigation/mobile overflow, calendar 
 Playwright's browser download was denied by the current cloud network policy. Tests passed using the already installed `/usr/bin/chromium` with `PLAYWRIGHT_CHROMIUM_EXECUTABLE`. No TLS verification was disabled or network policy bypassed.
 
 **External limits:** Google Sheet/Apps Script deployment, authorization, live CRUD, Drive upload/sharing and phone installation were not exercised. There is no Replit project or public app URL yet; `.replit` and README prepare GitHub import and Autoscale publication. GitHub push does not publish Replit. Publishing and public-URL validation require the user's Replit account/project.
+
+## Workbook import update
+
+The production seed is now empty. Synthetic fixtures exist only in tests. Existing seed-version-1 browsers remove seeded records and retain a local backup plus newly created records. Settings imports a complete dashboard workbook locally; records are never sent to the app server or committed into its public bundle.
+
+Verified the supplied workbook in an isolated production browser: all **136 records** imported and persisted across reload (3 events, 6 speakers, 6 speaker links, 12 posters, 12 tasks, 19 templates, 1 meeting, 6 members, 18 attendances, 4 organisations, 2 event-organisation links, 5 funding rows, 3 venues, 39 checklist rows). The shifted meeting status/agenda fields were repaired, missing timestamps were reported, start time remained 19:00, and an imported event saved successfully with no console errors or synthetic events. Original IDs/dates/contacts/links are preserved. This validates a local browser import, not an update to the user's Replit browser or shared Google backend.
+
+Updated checks: 30 domain/storage/import/backend tests passed; 17 of 18 browser tests passed initially, and the one failing template-action race was fixed and both desktop/mobile variants passed on rerun. Type checking and production build passed. Live Replit publication remains external.

@@ -1,3 +1,4 @@
+import { removeSynthetic } from "./migration";
 import { openDB } from "idb";
 import type {
   Tables,
@@ -133,6 +134,7 @@ export function validateNotes(file: NotesFile) {
   return new Blob([bytes], { type: file.type });
 }
 export class DemoService implements DataService {
+  constructor(private initial: () => Tables = seed) {}
   mode = "demo" as const;
   private async run<T>(
     fn: (t: Tables, files: Map<string, Blob>) => T,
@@ -143,10 +145,16 @@ export class DemoService implements DataService {
       store = tx.objectStore("state");
     let t = (await store.get("tables")) as Tables | undefined;
     const marker = await store.get("seed_version");
-    if (!t || marker !== 1) {
-      t = seed();
+    if (!t) {
+      t = this.initial();
       await store.put(t, "tables");
-      await store.put(1, "seed_version");
+      await store.put(2, "seed_version");
+    }
+    if (marker === 1 && t) {
+      await store.put(t, "before_synthetic_removal");
+      t = removeSynthetic(t);
+      await store.put(t, "tables");
+      await store.put(2, "seed_version");
     }
     const files = new Map<string, Blob>();
     let result: T;
@@ -164,6 +172,17 @@ export class DemoService implements DataService {
     }
     db.close();
     return structuredClone(result);
+  }
+  async replaceData(tables: Tables) {
+    const db = await dbPromise(),
+      tx = db.transaction(["state", "files"], "readwrite");
+    const old = await tx.objectStore("state").get("tables");
+    if (old) await tx.objectStore("state").put(old, "before_workbook_import");
+    await tx.objectStore("state").put(structuredClone(tables), "tables");
+    await tx.objectStore("state").put(2, "seed_version");
+    await tx.objectStore("files").clear();
+    await tx.done;
+    db.close();
   }
   getBootstrap() {
     return this.run((t) => ({
@@ -251,7 +270,7 @@ export class DemoService implements DataService {
       blob = await db.get("files", key);
     db.close();
     if (!blob)
-      throw new Error("This local demo upload is unavailable in this browser.");
+      throw new Error("This local upload is unavailable in this browser.");
     const url = URL.createObjectURL(blob);
     window.open(url, "_blank", "noopener,noreferrer");
     setTimeout(() => URL.revokeObjectURL(url), 60000);

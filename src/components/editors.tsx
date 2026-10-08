@@ -402,7 +402,7 @@ export function RecordEditor({
                   ? `Current upload: ${value.meeting_notes_file_name}. Choosing a file replaces it.`
                   : "PDF, DOC or DOCX, up to 8 MiB."}{" "}
                 {service.mode === "demo"
-                  ? "Local demo uploads stay in this browser."
+                  ? "Local uploads stay in this browser."
                   : "Replacement trashes the previous Drive upload. Deleting the meeting leaves its file."}
               </small>
             </label>

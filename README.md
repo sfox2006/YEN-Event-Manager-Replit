@@ -1,6 +1,6 @@
 # YEN Event Manager
 
-A rebuilt organising committee tracker based on the supplied dashboard study and three build prompts. Synthetic demo mode is the default. The app has no login or permission roles.
+A rebuilt organising committee tracker based on the supplied dashboard study and three build prompts. Local browser storage is the default; no simulated records are created. The app has no login or permission roles.
 
 ## Run and check
 
@@ -38,9 +38,11 @@ Stop the development server before starting production: both use one Express lis
 | `PORT` | `3000` | Single listener; Replit mapping must match any override |
 | `GOOGLE_APPS_SCRIPT_URL` | empty | Required only in Google mode; HTTPS `script.google.com/macros/s/<deployment>/exec` URL |
 
-No secrets, database provisioning or post-import source edits are needed for demo. Local `.env` is optional; see `.env.example`. Configuration is server-only; never use a `VITE_` variable for credentials. `/api/health` returns `{ok:true}` independent of Google; `/api/config` exposes only the selected mode. API responses are `no-store`.
+No secrets or database provisioning are needed for local browser storage. Local `.env` is optional; see `.env.example`. Configuration is server-only; never use a `VITE_` variable for credentials. `/api/health` returns `{ok:true}` independent of Google; `/api/config` exposes only the selected mode. API responses are `no-store`.
 
-Demo records and uploaded note blobs live in transactional **IndexedDB, per browser/profile/origin**. Six fictional active members, one historical member, four active organisations plus an archived one, dated/undated records and 19 editable task templates seed once with an explicit marker. Dates are relative to the first initialization and then retained. Clearing this site's IndexedDB resets demo records. Preview and published Replit origins have separate records; different visitors do not share them. No business records are persisted in server RAM or deployment files. Demo performs no external data API calls. Demo note uploads are local, not Google Drive uploads. External example links are illustrative.
+Local records and uploaded note blobs live in transactional **IndexedDB, per browser/profile/origin**. Fresh browsers start empty. Go to **Settings → Import dashboard workbook**, choose the complete 14-table `.xlsx`, review record counts and repairs, then select **Replace records with workbook**. This replaces records and local note uploads only in that browser. The workbook is parsed locally and is not sent to the server or included in public source/bundles. IDs, relationships, saved dates, valid timestamps, contacts, notes and external links are retained. Blank optional numeric fields stay absent. The known shifted legacy meeting status/agenda row is repaired; missing timestamps are explicitly reported and set to import time. Invalid IDs/references or incomplete workbooks fail before any replacement.
+
+Existing version-1 installations automatically remove the known synthetic seed IDs, retain newly created records (tasks attached to removed sample events become general tasks), and keep a local record backup under `before_synthetic_removal`. Imports keep a pre-import record backup under `before_workbook_import`. Backups stay in the browser; they are not server or cloud backups. Import once on your published origin; Preview, private profiles and different visitors have separate records. Do not clear IndexedDB to update a shell cache. The legacy server setting `APP_DATA_MODE=demo` still selects the local adapter for compatibility, but the UI no longer describes your real imported data as synthetic. A full dashboard workbook is required; a single-event Excel export has fewer sheets and cannot be used for this import.
 
 The Google adapter uses the server's fixed, allowlisted action proxy with a 20-second timeout, validated envelopes and a 16 MiB JSON request limit (base64 expands an 8 MiB file). Invalid Google mode configuration fails clearly rather than falling back to demo. The endpoint is absent from client configuration and bundles.
 
@@ -67,7 +69,7 @@ Excel export requires saved changes and fetches fresh detail. Nine worksheets in
 7. First notes upload creates/reuses “YEN Event Manager Meeting Notes” in the owner's Drive. Share deliberately with intended users: uploads do not make files public. Replacement trashes the previous upload; deleting a meeting leaves its Drive file. Linked poster/registration/meeting documents retain their own permissions.
 8. After backend changes: Deploy → Manage deployments → Edit → New version → Deploy. Saving code alone does not update a deployed API.
 
-**A public proxy is not authentication.** It grants callers the upstream access it has; hiding the URL does not restrict users. Restricted Google sign-in may return HTML rather than JSON because the server cannot complete interactive login. Protected real committee records need a separately designed authenticated architecture. The public default uses synthetic data.
+**A public proxy is not authentication.** It grants callers the upstream access it has; hiding the URL does not restrict users. Restricted Google sign-in may return HTML rather than JSON because the server cannot complete interactive login. Protected real committee records need a separately designed authenticated architecture. Real workbook data is imported locally; publicly distributing real records requires an explicit visibility decision or a protected shared backend.
 
 ## PWA and refresh
 
@@ -101,7 +103,7 @@ gh repo create yen-event-manager-rebuild --private --source=. --remote=origin --
 Alternatively create an empty GitHub repository, `git remote add origin <your repository URL>` and `git push -u origin main`. Private repository visibility and public app visibility are separate. In Codex cloud, supplied Git proxy authentication is used without extracting tokens or interactive login.
 
 1. Open **replit.com/import → GitHub**, connect GitHub and select `sfox2006/YEN-Event-Manager-Replit` → Import. Grant required repository/organisation import access rather than changing private visibility to work around permission errors.
-2. Press Run; `.replit` invokes `npm run replit:dev` (frozen install plus development server). No demo Secrets are required.
+2. Press Run; `.replit` invokes `npm run replit:dev` (frozen install plus development server). No Secrets are required for local storage.
 3. In Shell run `npm ci --include=dev`, `npm run typecheck`, `npm test`, `npm run build`. Avoid launching a second server on Run's port.
 4. Publishing → Adjust settings → **Autoscale**. Build: `npm ci --include=dev && npm run build`. Run: `npm start`. One port: **3000 → 80** (match a platform `PORT` override if present). Access: **Public**. Choose an available `.replit.app` subdomain and Publish. Account availability/cost requirements are shown by Replit. Static publishing is unsuitable because this app needs Node API/config routes.
 5. In a fresh/private browser verify `/#/dashboard`, all routes, `/api/health` (HTTP 200), creation/edit/reload, event deep link, Excel sheets and mobile layout. Replit Preview is not the public deployment.
@@ -120,7 +122,7 @@ Updates: commit/push; in a clean Replit checkout pull `git pull --ff-only origin
 - Upload 413: encoded 8 MiB needs approximately 10.7 MiB plus metadata; server allows 16 MiB while decoded limit remains 8 MiB.
 - Drive Access denied: adjust intended-user Drive permissions; uploading does not share files.
 - Stale UI: unregister stale shell service worker/clear shell caches; do not wipe IndexedDB as a first fix.
-- Different Preview/public data: expected per-origin demo storage. Shared data requires configured Google mode.
+- Different Preview/public data: expected per-origin local storage. Shared data requires configured Google mode.
 - Git/import denied: repair Git Providers/organisation authorization. Do not force-push or automatically make the repo public.
 
 ## Validation

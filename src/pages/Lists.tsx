@@ -1,3 +1,4 @@
+import { WorkbookImport } from "../components/WorkbookImport";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useData } from "../data/context";
@@ -634,7 +635,7 @@ export function Directory({ kind }: { kind: "member" | "organisation" }) {
   );
 }
 export function Settings() {
-  const { data, service, mutate, toast, install } = useData(),
+  const { data, service, mutate, toast, install, busy } = useData(),
     [editor, setEditor] = useState<object | null | undefined>();
   return (
     <>
@@ -643,6 +644,7 @@ export function Settings() {
         subtitle="Configure the app and optional preparation-task automation for new YEN events."
         action={
           <button
+            disabled={busy}
             type="button"
             className="primary"
             onClick={() => setEditor(null)}
@@ -651,14 +653,20 @@ export function Settings() {
           </button>
         }
       />
+      <WorkbookImport />
       <Panel title="Install the phone app">
         <p>
           {service.mode === "demo"
-            ? "Demo records and local note uploads belong to this browser and origin."
+            ? "Local records and note uploads belong to this browser and origin."
             : "Shared records use your configured Google Sheet and Apps Script. Loading and saving require internet access."}
         </p>
         {install ? (
-          <button type="button" className="primary" onClick={install}>
+          <button
+            disabled={busy}
+            type="button"
+            className="primary"
+            onClick={install}
+          >
             Install app
           </button>
         ) : (
@@ -706,10 +714,15 @@ export function Settings() {
               <Badge value={t.priority} />,
               <Badge value={t.active ? "Active" : "Inactive"} />,
               <div className="row-actions">
-                <button type="button" onClick={() => setEditor(t)}>
+                <button
+                  disabled={busy}
+                  type="button"
+                  onClick={() => setEditor(t)}
+                >
                   Edit
                 </button>
                 <button
+                  disabled={busy}
                   type="button"
                   onClick={() =>
                     mutate(() =>
@@ -720,6 +733,7 @@ export function Settings() {
                   {t.active ? "Deactivate" : "Reactivate"}
                 </button>
                 <button
+                  disabled={busy}
                   type="button"
                   className="danger"
                   onClick={() => {

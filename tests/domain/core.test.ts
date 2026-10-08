@@ -1,7 +1,8 @@
 import "fake-indexeddb/auto";
 import { beforeEach, describe, it, expect } from "vitest";
 import { DemoService } from "../../src/data/demo";
-import { blankEvent, seed } from "../../src/data/seed";
+import { blankEvent } from "../../src/data/seed";
+import { fixtureSeed as seed } from "../fixtures/seed";
 import {
   readiness,
   getDetail,
@@ -123,7 +124,7 @@ describe("three-way merge", () => {
 });
 describe("transactional demo", () => {
   it("seeds once, persists name-only creation, and joins directory names", async () => {
-    const s = new DemoService(),
+    const s = new DemoService(seed),
       e = { ...blankEvent(), event_name: "Only a name" };
     await s.saveEvent(e);
     expect((await s.getEvent(e.event_id)).event.date).toBe("");
@@ -136,7 +137,7 @@ describe("transactional demo", () => {
     );
   });
   it("automation retries do not overwrite edited tasks and template deletion preserves tasks", async () => {
-    const s = new DemoService(),
+    const s = new DemoService(seed),
       e = { ...blankEvent(), event_name: "Automated", date: "2026-12-01" };
     await s.createEventWithAutomation(e);
     let b = await s.getBootstrap();
@@ -154,7 +155,7 @@ describe("transactional demo", () => {
     ).toBe(true);
   });
   it("detail merge preserves independent tasks, timestamps and concurrent edits", async () => {
-    const s = new DemoService(),
+    const s = new DemoService(seed),
       base = await s.getEvent("event_0");
     await s.saveEvent({ ...base.event, description: "Concurrent description" });
     const submitted = structuredClone(base);
@@ -170,7 +171,7 @@ describe("transactional demo", () => {
     expect(saved.tasks).toEqual(base.tasks);
   });
   it("same-field conflict aborts writes and invalid foreign keys are rejected", async () => {
-    const s = new DemoService(),
+    const s = new DemoService(seed),
       base = await s.getEvent("event_0");
     await s.saveEvent({ ...base.event, event_name: "Other" });
     await expect(
@@ -191,7 +192,7 @@ describe("transactional demo", () => {
     ).rejects.toThrow(/linked/);
   });
   it("recalculation changes only incomplete generated tasks using stored offsets", async () => {
-    const s = new DemoService(),
+    const s = new DemoService(seed),
       e = { ...blankEvent(), event_name: "Recalc", date: "2026-12-01" };
     await s.createEventWithAutomation(e);
     let d = await s.getEvent(e.event_id),
@@ -225,7 +226,7 @@ describe("transactional demo", () => {
     ).toBe("2026-10-11");
   });
   it("cascade preserves general tasks, directories, meetings and templates", async () => {
-    const s = new DemoService(),
+    const s = new DemoService(seed),
       before = await s.getBootstrap();
     await s.deleteEvent("event_0");
     const b = await s.getBootstrap();
@@ -237,7 +238,7 @@ describe("transactional demo", () => {
     await expect(s.getEvent("event_0")).rejects.toThrow(/deleted/);
   });
   it("local meeting files are persisted without durable object URLs", async () => {
-    const s = new DemoService(),
+    const s = new DemoService(seed),
       m = (await s.getBootstrap()).meetings[0];
     const saved = await s.saveMeeting(m, {
       name: "notes.pdf",
@@ -270,7 +271,7 @@ it("cache coalesces reads and invalidates in-flight results", async () => {
 });
 
 it("speakers need only a name and partner links resolve by ID", async () => {
-  const s = new DemoService(),
+  const s = new DemoService(seed),
     base = await s.getEvent("event_7"),
     ts = {
       created_at: new Date().toISOString(),
@@ -316,7 +317,7 @@ it("speakers need only a name and partner links resolve by ID", async () => {
   );
 });
 it("event cascade preserves a speaker shared by another event", async () => {
-  const s = new DemoService(),
+  const s = new DemoService(seed),
     original = await s.getEvent("event_0"),
     base = await s.getEvent("event_1");
   await s.saveEventDetail({
@@ -354,7 +355,7 @@ it("local/UTC midnight distinction remains explicit", () => {
 });
 
 it("unchanged speaker links retain timestamps regardless of object key order", async () => {
-  const s = new DemoService(),
+  const s = new DemoService(seed),
     base = await s.getEvent("event_0"),
     old = base.speakers.map((s) => s.updated_at);
   await new Promise((r) => setTimeout(r, 5));

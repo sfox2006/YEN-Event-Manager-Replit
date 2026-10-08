@@ -1,5 +1,34 @@
 import { test, expect } from "@playwright/test";
 import ExcelJS from "exceljs";
+import { fixtureSeed } from "../fixtures/seed";
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(async (tables) => {
+    await new Promise<void>((resolve, reject) => {
+      const req = indexedDB.open("yen-event-manager-demo", 1);
+      req.onupgradeneeded = () => {
+        req.result.createObjectStore("state");
+        req.result.createObjectStore("files");
+      };
+      req.onsuccess = () => {
+        const db = req.result,
+          tx = db.transaction("state", "readwrite");
+        const lookup = tx.objectStore("state").get("tables");
+        lookup.onsuccess = () => {
+          if (!lookup.result) {
+            tx.objectStore("state").put(tables, "tables");
+            tx.objectStore("state").put(2, "seed_version");
+          }
+        };
+        tx.oncomplete = () => {
+          db.close();
+          resolve();
+        };
+        tx.onerror = () => reject(tx.error);
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }, fixtureSeed());
+});
 test("all routes, mobile menu, calendar overflow and no page overflow", async ({
   page,
 }) => {
@@ -131,6 +160,12 @@ test("automation preview, generation, task status regroup and template deletion"
     .filter({ hasText: "Agree event plan and approval" })
     .getByRole("button", { name: "Deactivate", exact: true })
     .click();
+  await expect(
+    page
+      .locator("tr")
+      .filter({ hasText: "Agree event plan and approval" })
+      .getByRole("button", { name: "Reactivate", exact: true }),
+  ).toBeVisible();
   page.once("dialog", (d) => d.accept());
   await page
     .locator("tr")
@@ -160,7 +195,7 @@ test("meeting upload and replacement persist across reload", async ({
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.reload();
   const row = page.locator("tr").filter({ hasText: "Notes upload test" });
-  await expect(row.getByText("notes.pdf (local demo upload)")).toBeVisible();
+  await expect(row.getByText("notes.pdf (local upload)")).toBeVisible();
   await row.getByRole("button", { name: "Edit", exact: true }).click();
   await page.getByLabel("Upload meeting notes file").setInputFiles({
     name: "replacement.pdf",
@@ -169,9 +204,7 @@ test("meeting upload and replacement persist across reload", async ({
   });
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  await expect(
-    row.getByText("replacement.pdf (local demo upload)"),
-  ).toBeVisible();
+  await expect(row.getByText("replacement.pdf (local upload)")).toBeVisible();
 });
 test("filters AND within bucket and cancellation does not create records", async ({
   page,

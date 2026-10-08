@@ -113,7 +113,7 @@ export function MeetingTable({
                     .catch((e) => toast(e.message))
                 }
               >
-                {m.meeting_notes_file_name} (local demo upload)
+                {m.meeting_notes_file_name} (local upload)
               </button>
             ) : (
               <SafeLink url={m.meeting_notes_file_url}>

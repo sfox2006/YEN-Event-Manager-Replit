@@ -111,7 +111,7 @@ export function Provider({ children }: { children: ReactNode }) {
   if (!service || !data)
     return (
       <main className="loading">
-        Loading {service?.mode === "google" ? "shared event" : "demo event"}{" "}
+        Loading {service?.mode === "google" ? "shared event" : "local event"}{" "}
         data…
       </main>
     );

@@ -85,8 +85,8 @@ function Shell() {
       </header>
       {service.mode === "demo" && (
         <div className="demo-notice">
-          Synthetic demo · Your records and local uploads stay in this browser.
-          Each visitor has a separate demo.
+          Local browser data · Records and uploads stay in this browser. Import
+          your dashboard workbook in Settings.
         </div>
       )}
       {!online && (
@@ -94,7 +94,7 @@ function Shell() {
           Offline —{" "}
           {service.mode === "google"
             ? "shared loading and saves need an internet connection."
-            : "local demo records remain available; there is no queued shared synchronization."}
+            : "local records remain available; there is no queued shared synchronization."}
         </div>
       )}
       <main>

@@ -1,5 +1,6 @@
 import type {
   Bootstrap,
+  Tables,
   EventDetail,
   Event,
   DetailPayload,
@@ -26,5 +27,6 @@ export interface DataService {
   deleteTask(id: string): Promise<void>;
   saveTaskTemplate(t: Template): Promise<Template>;
   deleteTaskTemplate(id: string): Promise<void>;
+  replaceData?(tables: Tables): Promise<void>;
   openNotes?(id: string): Promise<void>;
 }
