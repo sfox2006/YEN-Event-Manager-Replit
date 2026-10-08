@@ -1,0 +1,10 @@
+entrypoint = "server/index.mjs"
+modules = ["nodejs-22"]
+run = "npm run replit:dev"
+[deployment]
+deploymentTarget = "cloudrun"
+build = ["sh", "-c", "npm ci --include=dev && npm run build"]
+run = ["npm", "start"]
+[[ports]]
+localPort = 3000
+externalPort = 80
