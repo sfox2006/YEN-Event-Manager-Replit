@@ -368,3 +368,32 @@ test("task reminder announcements persist, filter by member and support read sta
     ),
   ).toBe(true);
 });
+
+test("Account reports unconfigured authentication without pretending local records are signed-in users", async ({
+  page,
+}) => {
+  await page.goto("/#/account");
+  await expect(
+    page.getByRole("heading", { name: "Account", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      "Replit Auth has not been connected to this application yet.",
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Sign in with Replit" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Sign out", exact: true }),
+  ).toHaveCount(0);
+  const res = await page.request.get("/api/admin/access");
+  expect(res.status()).toBe(401);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+
+test('Account remains reachable when protected event data cannot load',async({page})=>{await page.route('**/api/config',r=>r.fulfill({status:503,contentType:'application/json',body:JSON.stringify({error:'Sign-in setup required'})}));await page.goto('/#/dashboard');await expect(page.getByRole('heading',{name:'Unable to load event data'})).toBeVisible();await page.getByRole('link',{name:'Open Account / sign in'}).click();await expect(page.getByRole('heading',{name:'Account',exact:true})).toBeVisible();await expect(page.getByText('Replit Auth has not been connected to this application yet.')).toBeVisible();});

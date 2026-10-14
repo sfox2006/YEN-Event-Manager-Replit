@@ -1,4 +1,9 @@
 import "dotenv/config";
+import {
+  authenticationRoutes,
+  authMode,
+  requireSignIn,
+} from "./authentication.mjs";
 import express from "express";
 export const port = Number(process.env.PORT || 3000);
 export const reads = ["health", "bootstrap", "event", "announcements"];
@@ -45,6 +50,12 @@ export function api(app) {
     next();
   });
   app.use(express.json({ limit: "16mb" }));
+  authenticationRoutes(app);
+  app.use("/api/data", (req, res, next) => {
+    if (authMode() === "replit" || app.locals.authenticationAdapter)
+      return requireSignIn(app)(req, res, next);
+    next();
+  });
   app.get("/api/health", (_req, res) => res.json({ ok: true }));
   app.get("/api/config", (_req, res) => res.json({ dataMode: mode }));
   app.all("/api/data", async (req, res) => {

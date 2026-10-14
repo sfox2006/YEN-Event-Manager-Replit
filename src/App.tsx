@@ -8,6 +8,7 @@ import {
   useLocation,
   Link,
 } from "react-router-dom";
+import { Account } from "./pages/Account";
 import { Announcements } from "./pages/Announcements";
 import { Provider, useData } from "./data/context";
 import {
@@ -69,6 +70,7 @@ function Shell() {
             "Committee",
             "Organisations",
             "Settings",
+            "Account",
           ].map((label) => (
             <NavLink
               key={label}
@@ -113,6 +115,7 @@ function Shell() {
             element={<Directory kind="organisation" />}
           />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/account" element={<Account />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </main>
@@ -120,12 +123,40 @@ function Shell() {
     </>
   );
 }
+function Entry() {
+  const location = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+  if (location.pathname === "/account")
+    return (
+      <>
+        <header className="app-header">
+          <Link className="brand" to="/dashboard">
+            <span className="logo">
+              <img src="/icons/event.svg" alt="" />
+            </span>
+            <strong>Event Manager</strong>
+          </Link>
+          <Link className="email-button" to="/dashboard">
+            Back to dashboard
+          </Link>
+        </header>
+        <main>
+          <Account />
+        </main>
+      </>
+    );
+  return (
+    <Provider>
+      <Shell />
+    </Provider>
+  );
+}
 export default function App() {
   return (
     <HashRouter>
-      <Provider>
-        <Shell />
-      </Provider>
+      <Entry />
     </HashRouter>
   );
 }

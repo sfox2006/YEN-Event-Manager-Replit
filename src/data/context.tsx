@@ -96,6 +96,7 @@ export function Provider({ children }: { children: ReactNode }) {
     return (
       <main>
         <h1>Unable to load event data</h1>
+        <a href="#/account">Open Account / sign in</a>
         <p role="alert">{error}</p>
         <button
           onClick={() => {
