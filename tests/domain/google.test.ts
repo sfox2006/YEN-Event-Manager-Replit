@@ -4,6 +4,7 @@ import { it, expect } from "vitest";
 import { fixtureSeed as seed } from "../fixtures/seed";
 function backend() {
   let tables = seed();
+  let announcements: unknown[] = [];
   const lock = {
     waitLock() {},
     releaseLock() {},
@@ -20,12 +21,19 @@ function backend() {
     },
     LockService: { getScriptLock: () => lock },
     load: () => structuredClone(tables),
+    loadAnnouncements: () => structuredClone(announcements),
+    persistAnnouncements: (r: unknown[]) => {
+      announcements = structuredClone(r);
+    },
     persist: (t: typeof tables) => {
       tables = structuredClone(t);
     },
   });
   runInContext(readFileSync("apps-script/Code.gs", "utf8"), context);
-  runInContext("readTables=()=>load();writeTables=t=>persist(t);", context);
+  runInContext(
+    "readTables=()=>load();writeTables=t=>persist(t);readAnnouncements=()=>loadAnnouncements();writeAnnouncements=r=>persistAnnouncements(r);",
+    context,
+  );
   const post = (action: string, payload: object) => {
     context.request = {
       parameter: {},
@@ -84,4 +92,34 @@ it("Apps Script merges disjoint edits and rejects same-field conflicts", () => {
       event: { ...base.event, description: "Conflict" },
     }).ok,
   ).toBe(false);
+});
+
+it("shared reminders use saved assignees, deduplicate retries and update read status", () => {
+  const b = backend();
+  const a = b.post("sendTaskReminder", {
+    task_id: "task_0",
+    announcement_id: "announcement_test",
+  });
+  expect(a.ok).toBe(true);
+  expect(a.data.member_id).toBe("member_0");
+  expect(a.data.message).toContain("Review event plan");
+  expect(
+    b.post("sendTaskReminder", {
+      task_id: "task_0",
+      announcement_id: "announcement_test",
+    }).ok,
+  ).toBe(true);
+  expect(b.get("announcements").data).toHaveLength(1);
+  expect(
+    b.post("markAnnouncementRead", {
+      announcement_id: "announcement_test",
+      read: true,
+    }).data.read_at,
+  ).not.toBe("");
+  expect(
+    b.post("markAnnouncementRead", {
+      announcement_id: "announcement_test",
+      read: false,
+    }).data.read_at,
+  ).toBe("");
 });

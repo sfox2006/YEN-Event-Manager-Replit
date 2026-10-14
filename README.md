@@ -128,3 +128,9 @@ Updates: commit/push; in a clean Replit checkout pull `git pull --ff-only origin
 ## Validation
 
 See `VALIDATION.md` for the actual current command results and limits. Public Replit publishing and optional Google backend operations are external steps; preparing `.replit` does not mean a site has been deployed.
+
+## Task reminders and announcements
+
+Each saved task has **Send reminder** and **Email reminder** actions on Tasks and in its event workspace. Assign a committee member first. Email reminder reads the member's current Committee email address by ID and opens a `mailto:` draft with the task name/due date in the subject and the assignee greeting, due date, description and notes in the body. Missing/invalid email addresses disable this action; edit the member in Committee to fix it. Your OS/browser chooses the default email app or registered webmail handler (configure Gmail/Outlook as the preferred `mailto:` handler if desired). Review and send the draft yourself; the app does not send email automatically.
+
+Send reminder adds a saved snapshot to **Announcements**, filterable by member and markable read/unread. No email address is required for an in-app reminder. There are no signed-in accounts, private inbox permissions, push notifications or automatic scheduled delivery. In local mode announcements stay in that browser, just like the tasks. They do not appear in a different person's browser. In Google mode they use an additional shared **Announcements** sheet, created on first use; redeploy the updated `apps-script/Code.gs` as a new web-app version before using the feature. This supplemental table is separate from the 14-table workbook import. Announcements retain their original message if a task later changes or is deleted. Marking read updates the stored reminder, not a per-account read receipt. Live Google service operations and actual email-client launches must be verified in the owner's deployment/device.

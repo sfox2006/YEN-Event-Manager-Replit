@@ -53,6 +53,15 @@ export class GoogleService implements DataService {
     if (!json.ok) throw new Error(json.error || "Unable to save shared data");
     return normalize(json.data);
   }
+  getAnnouncements() {
+    return this.call("announcements");
+  }
+  sendTaskReminder(task_id: string, announcement_id: string) {
+    return this.call("sendTaskReminder", { task_id, announcement_id });
+  }
+  markAnnouncementRead(announcement_id: string, read: boolean) {
+    return this.call("markAnnouncementRead", { announcement_id, read });
+  }
   getBootstrap() {
     return this.call("bootstrap");
   }

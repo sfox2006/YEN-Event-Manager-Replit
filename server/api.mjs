@@ -1,8 +1,10 @@
 import "dotenv/config";
 import express from "express";
 export const port = Number(process.env.PORT || 3000);
-export const reads = ["health", "bootstrap", "event"];
+export const reads = ["health", "bootstrap", "event", "announcements"];
 export const writes = [
+  "sendTaskReminder",
+  "markAnnouncementRead",
   "saveEvent",
   "createEventWithAutomation",
   "saveEventDetail",
@@ -86,13 +88,11 @@ export function api(app) {
         throw 0;
       res.status(data.ok ? 200 : 400).json(data);
     } catch {
-      res
-        .status(502)
-        .json({
-          ok: false,
-          error:
-            "Google backend did not return valid JSON. Check its deployed /exec URL, access permissions, and availability.",
-        });
+      res.status(502).json({
+        ok: false,
+        error:
+          "Google backend did not return valid JSON. Check its deployed /exec URL, access permissions, and availability.",
+      });
     }
   });
   app.use("/api", (_req, res) =>
@@ -100,15 +100,13 @@ export function api(app) {
   );
   app.use((err, _req, res, next) => {
     if (err)
-      return res
-        .status(err.status || 400)
-        .json({
-          ok: false,
-          error:
-            err.type === "entity.too.large"
-              ? "Request exceeds 16 MiB"
-              : "Invalid request body",
-        });
+      return res.status(err.status || 400).json({
+        ok: false,
+        error:
+          err.type === "entity.too.large"
+            ? "Request exceeds 16 MiB"
+            : "Invalid request body",
+      });
     next();
   });
 }

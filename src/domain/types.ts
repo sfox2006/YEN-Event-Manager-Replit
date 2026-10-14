@@ -199,3 +199,14 @@ export interface NotesFile {
   type: string;
   base64: string;
 }
+
+export interface Announcement extends Row {
+  announcement_id: string;
+  member_id: string;
+  task_id: string;
+  task_name: string;
+  due_date: string;
+  notes: string;
+  message: string;
+  read_at: string;
+}

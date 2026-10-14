@@ -8,6 +8,7 @@ import {
   useLocation,
   Link,
 } from "react-router-dom";
+import { Announcements } from "./pages/Announcements";
 import { Provider, useData } from "./data/context";
 import {
   Dashboard,
@@ -64,6 +65,7 @@ function Shell() {
             "Events",
             "Meetings",
             "Tasks",
+            "Announcements",
             "Committee",
             "Organisations",
             "Settings",
@@ -104,6 +106,7 @@ function Shell() {
           <Route path="/event/:id" element={<EventWorkspace />} />
           <Route path="/meetings" element={<Meetings />} />
           <Route path="/tasks" element={<Tasks />} />
+          <Route path="/announcements" element={<Announcements />} />
           <Route path="/committee" element={<Directory kind="member" />} />
           <Route
             path="/organisations"

@@ -1,5 +1,6 @@
 import type {
   Bootstrap,
+  Announcement,
   Tables,
   EventDetail,
   Event,
@@ -13,6 +14,15 @@ import type {
 } from "../domain/types";
 export interface DataService {
   mode: "demo" | "google";
+  getAnnouncements(): Promise<Announcement[]>;
+  sendTaskReminder(
+    task_id: string,
+    announcement_id: string,
+  ): Promise<Announcement>;
+  markAnnouncementRead(
+    announcement_id: string,
+    read: boolean,
+  ): Promise<Announcement>;
   getBootstrap(): Promise<Bootstrap>;
   getEvent(id: string): Promise<EventDetail>;
   saveEvent(e: Event): Promise<Event>;

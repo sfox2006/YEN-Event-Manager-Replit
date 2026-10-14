@@ -1,3 +1,4 @@
+import { TaskReminderActions } from "../components/TaskReminderActions";
 import { WorkbookImport } from "../components/WorkbookImport";
 import { useState } from "react";
 import { Link } from "react-router-dom";
@@ -423,6 +424,7 @@ export function TaskSections({
             ))}
           </select>,
           <div className="row-actions">
+            <TaskReminderActions key={t.task_id} task={t} />
             <button type="button" onClick={() => onEdit(t)}>
               Edit
             </button>

@@ -1,7 +1,9 @@
 import { removeSynthetic } from "./migration";
+import { makeAnnouncement } from "../domain/taskReminder";
 import { openDB } from "idb";
 import type {
   Tables,
+  Announcement,
   Event,
   EventDetail,
   DetailPayload,
@@ -172,6 +174,68 @@ export class DemoService implements DataService {
     }
     db.close();
     return structuredClone(result);
+  }
+  async getAnnouncements() {
+    const db = await dbPromise();
+    try {
+      return ((await db.get("state", "announcements")) || []) as Announcement[];
+    } finally {
+      db.close();
+    }
+  }
+  private async announcementWrite(
+    fn: (rows: Announcement[], t: Tables) => Announcement,
+  ) {
+    const db = await dbPromise(),
+      tx = db.transaction("state", "readwrite"),
+      store = tx.objectStore("state");
+    try {
+      const rows: Announcement[] = (await store.get("announcements")) || [],
+        t: Tables = (await store.get("tables")) || this.initial(),
+        result = fn(rows, t);
+      await store.put(rows, "announcements");
+      await tx.done;
+      return structuredClone(result);
+    } catch (e) {
+      tx.abort();
+      await tx.done.catch(() => {});
+      throw e;
+    } finally {
+      db.close();
+    }
+  }
+  sendTaskReminder(task_id: string, announcement_id: string) {
+    if (!/^announcement_[A-Za-z0-9_-]+$/.test(announcement_id))
+      return Promise.reject(new Error("Invalid reminder ID"));
+    return this.announcementWrite((rows, t) => {
+      const existing = rows.find((a) => a.announcement_id === announcement_id);
+      if (existing) {
+        if (existing.task_id !== task_id)
+          throw new Error("Reminder ID is already in use");
+        return existing;
+      }
+      const task = t.tasks.find((t) => t.task_id === task_id),
+        member = t.committee.find(
+          (m) => m.member_id === task?.assignee_member_id,
+        );
+      if (!task) throw new Error("This task has been deleted.");
+      if (!member)
+        throw new Error(
+          "Assign this task to a committee member before adding a reminder.",
+        );
+      const a = makeAnnouncement(task, member, announcement_id);
+      rows.unshift(a);
+      return a;
+    });
+  }
+  markAnnouncementRead(announcement_id: string, read: boolean) {
+    return this.announcementWrite((rows) => {
+      const a = rows.find((a) => a.announcement_id === announcement_id);
+      if (!a) throw new Error("Reminder not found");
+      a.read_at = read ? new Date().toISOString() : "";
+      a.updated_at = new Date().toISOString();
+      return a;
+    });
   }
   async replaceData(tables: Tables) {
     const db = await dbPromise(),

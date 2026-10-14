@@ -331,3 +331,40 @@ test("separate browser contexts retain separate demo records", async ({
   await a.close();
   await b.close();
 });
+
+test("task reminder announcements persist, filter by member and support read status; emails open encoded drafts", async ({
+  page,
+}) => {
+  await page.goto("/#/tasks");
+  const row = page.locator("tr").filter({ hasText: "Review event plan" });
+  const email = row.getByRole("link", { name: "Email reminder" });
+  const href = await email.getAttribute("href");
+  expect(href).toContain("mailto:member1@example.com?");
+  expect(
+    new URLSearchParams(href!.slice(href!.indexOf("?") + 1)).get("subject"),
+  ).toContain("Review event plan");
+  await row.getByRole("button", { name: "Send reminder", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("local Announcements");
+  await page.goto("/#/announcements");
+  await expect(
+    page.getByRole("heading", { name: "Review event plan", exact: true }),
+  ).toBeVisible();
+  await page.getByLabel("View announcements for").selectOption("member_1");
+  await expect(
+    page.getByRole("heading", { name: "No announcements" }),
+  ).toBeVisible();
+  await page.getByLabel("View announcements for").selectOption("member_0");
+  await page.getByRole("button", { name: "Mark as read" }).click();
+  await expect(
+    page.getByRole("button", { name: "Mark as unread" }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Mark as unread" }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});

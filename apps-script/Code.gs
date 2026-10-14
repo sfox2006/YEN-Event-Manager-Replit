@@ -639,6 +639,8 @@ function doGet(e) {
   try {
     const a = e.parameter.action;
     if (a === "health") return json({ ok: true, data: { ok: true } });
+    if (a === "announcements")
+      return json({ ok: true, data: readAnnouncements() });
     const t = readTables();
     if (a === "bootstrap")
       return json({
@@ -862,6 +864,69 @@ function doPost(e) {
     lock.waitLock(20000);
     const t = readTables();
     let data = null;
+    if (action === "sendTaskReminder" || action === "markAnnouncementRead") {
+      const rows = readAnnouncements();
+      if (action === "sendTaskReminder") {
+        if (
+          typeof p.announcement_id !== "string" ||
+          !/^announcement_[A-Za-z0-9_-]+$/.test(p.announcement_id)
+        )
+          throw new Error("Invalid reminder ID");
+        const existing = rows.find(
+          (a) => a.announcement_id === p.announcement_id,
+        );
+        if (existing) {
+          if (existing.task_id !== p.task_id)
+            throw new Error("Reminder ID is already in use");
+          return json({ ok: true, data: existing });
+        }
+        const task = t.tasks.find((x) => x.task_id === p.task_id),
+          member = t.committee.find(
+            (m) => m.member_id === (task && task.assignee_member_id),
+          );
+        if (!task) throw new Error("This task has been deleted.");
+        if (!member)
+          throw new Error(
+            "Assign this task to a committee member before adding a reminder.",
+          );
+        const now = new Date().toISOString();
+        data = {
+          announcement_id: p.announcement_id,
+          member_id: member.member_id,
+          task_id: task.task_id,
+          task_name: task.task_name,
+          due_date: task.due_date,
+          notes: task.notes,
+          message:
+            "Hi " +
+            member.name +
+            ",\n\nThis is a reminder about your task: " +
+            task.task_name +
+            ".\nDue date: " +
+            (task.due_date ? formatDate(task.due_date) : "No due date set") +
+            "\n" +
+            (task.description
+              ? "\nDescription: " + task.description + "\n"
+              : "") +
+            "\nNotes: " +
+            (task.notes || "No notes provided.") +
+            "\n\nThank you.",
+          read_at: "",
+          created_at: now,
+          updated_at: now,
+        };
+        rows.unshift(data);
+      } else {
+        data = rows.find((a) => a.announcement_id === p.announcement_id);
+        if (!data) throw new Error("Reminder not found");
+        if (typeof p.read !== "boolean")
+          throw new Error("Read status must be boolean");
+        data.read_at = p.read ? new Date().toISOString() : "";
+        data.updated_at = new Date().toISOString();
+      }
+      writeAnnouncements(rows);
+      return json({ ok: true, data });
+    }
     const mappings = {
       saveEvent: ["events", "event"],
       saveCommittee: ["committee", "member"],
@@ -937,4 +1002,50 @@ function doPost(e) {
   } finally {
     if (lock.hasLock()) lock.releaseLock();
   }
+}
+
+const ANNOUNCEMENT_HEADERS = [
+  "announcement_id",
+  "member_id",
+  "task_id",
+  "task_name",
+  "due_date",
+  "notes",
+  "message",
+  "read_at",
+  "created_at",
+  "updated_at",
+];
+function announcementsSheet() {
+  const ss = spreadsheet();
+  let sheet = ss.getSheetByName("Announcements");
+  if (!sheet) {
+    sheet = ss.insertSheet("Announcements");
+    sheet
+      .getRange(1, 1, 1, ANNOUNCEMENT_HEADERS.length)
+      .setValues([ANNOUNCEMENT_HEADERS]);
+    sheet.setFrozenRows(1);
+  }
+  return sheet;
+}
+function readAnnouncements() {
+  const values = announcementsSheet().getDataRange().getValues(),
+    headers = values.shift();
+  return values
+    .filter((r) => r[0] !== "")
+    .map((row) =>
+      Object.fromEntries(headers.map((h, i) => [h, normalizeCell(h, row[i])])),
+    );
+}
+function writeAnnouncements(rows) {
+  const sheet = announcementsSheet();
+  if (sheet.getLastRow() > 1)
+    sheet
+      .getRange(2, 1, sheet.getLastRow() - 1, ANNOUNCEMENT_HEADERS.length)
+      .clearContent();
+  if (rows.length)
+    sheet
+      .getRange(2, 1, rows.length, ANNOUNCEMENT_HEADERS.length)
+      .setValues(rows.map((r) => ANNOUNCEMENT_HEADERS.map((h) => r[h] || "")));
+  SpreadsheetApp.flush();
 }
